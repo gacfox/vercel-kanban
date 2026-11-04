@@ -252,6 +252,13 @@ function BoardView() {
                 </TooltipContent>
               </Tooltip>
 
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/projects/${data.project.id}/archive`}>
+                  <Archive className="size-4" />
+                  归档
+                </Link>
+              </Button>
+
               {canManage ? (
                 <>
                   {!data.project.archivedAt ? (

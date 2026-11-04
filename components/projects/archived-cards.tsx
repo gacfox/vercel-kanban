@@ -22,10 +22,12 @@ export function ArchivedCards({
   projectId,
   cards,
   canEdit,
+  onOpenCard,
 }: {
   projectId: string;
   cards: ArchivedCard[];
   canEdit: boolean;
+  onOpenCard: (cardId: string) => void;
 }) {
   const router = useRouter();
   const [pendingId, setPendingId] = React.useState<string | null>(null);
@@ -75,14 +77,20 @@ export function ArchivedCards({
           key={card.id}
           className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"
         >
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{card.title}</p>
-            <p className="text-xs text-muted-foreground">
+          <button
+            type="button"
+            className="min-w-0 flex-1 text-left"
+            onClick={() => onOpenCard(card.id)}
+          >
+            <span className="block truncate text-sm font-medium hover:underline">
+              {card.title}
+            </span>
+            <span className="block text-xs text-muted-foreground">
               原列：{card.columnTitle ?? "已删除的列"} · 归档于{" "}
               <LocalDate value={card.archivedAt} />
-            </p>
+            </span>
             {card.labels.length > 0 ? (
-              <div className="mt-1 flex flex-wrap gap-1">
+              <span className="mt-1 flex flex-wrap gap-1">
                 {card.labels.map((label) => (
                   <span
                     key={label.id}
@@ -91,9 +99,9 @@ export function ArchivedCards({
                     {label.name}
                   </span>
                 ))}
-              </div>
+              </span>
             ) : null}
-          </div>
+          </button>
 
           <div className="flex items-center gap-2">
             <div className="flex -space-x-1.5">

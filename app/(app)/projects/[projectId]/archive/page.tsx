@@ -2,8 +2,11 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import { requireProjectAccessPage } from "@/lib/auth/guards";
-import { getArchivedCards } from "@/lib/db/queries/board";
-import { ArchivedCards } from "@/components/projects/archived-cards";
+import {
+  getArchivedCards,
+  getProjectSettingsData,
+} from "@/lib/db/queries/board";
+import { ArchiveView } from "@/components/projects/archive-view";
 import { Button } from "@/components/ui/button";
 
 export const instant = false;
@@ -16,11 +19,14 @@ export default async function ProjectArchivePage({
   const { projectId } = await params;
   await connection();
 
-  const { role, isAdmin, project } = await requireProjectAccessPage(
+  const { user, role, isAdmin, project } = await requireProjectAccessPage(
     projectId,
     "viewer"
   );
-  const cards = await getArchivedCards(projectId);
+  const [cards, settings] = await Promise.all([
+    getArchivedCards(projectId),
+    getProjectSettingsData(projectId, role, isAdmin),
+  ]);
   const canEdit =
     !project.archived_at && (role === "editor" || role === "owner" || isAdmin);
 
@@ -41,7 +47,25 @@ export default async function ProjectArchivePage({
         </div>
       </div>
 
-      <ArchivedCards projectId={projectId} cards={cards} canEdit={canEdit} />
+      <ArchiveView
+        projectId={projectId}
+        cards={cards}
+        canEdit={canEdit}
+        boardData={{
+          project: settings.project,
+          columns: settings.columns,
+          cards: [],
+          labels: settings.labels,
+          fields: settings.fields,
+          members: settings.members,
+          role,
+          isAdmin,
+          canEdit: false,
+          canManage: false,
+          snapshotRevision: "",
+          currentUser: user,
+        }}
+      />
     </div>
   );
 }

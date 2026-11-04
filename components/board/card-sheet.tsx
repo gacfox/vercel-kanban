@@ -279,20 +279,31 @@ export function CardSheet() {
             </div>
           ) : card ? (
             <div className="space-y-3 pr-8">
-              <Input
-                value={titleDraft}
-                onChange={(event) => setTitleDraft(event.target.value)}
-                onBlur={() => void saveTitle()}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") event.currentTarget.blur();
-                }}
-                className="h-auto border-0 px-0 py-0 text-lg font-semibold shadow-none focus-visible:ring-0"
-                disabled={!data.canEdit}
-              />
+              {data.canEdit ? (
+                <Input
+                  value={titleDraft}
+                  onChange={(event) => setTitleDraft(event.target.value)}
+                  onBlur={() => void saveTitle()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") event.currentTarget.blur();
+                  }}
+                  className="h-auto border-0 px-0 py-0 text-lg font-semibold shadow-none focus-visible:ring-0"
+                />
+              ) : (
+                <p className="text-lg font-semibold break-words">{card.title}</p>
+              )}
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span>创建于 <LocalDate value={card.createdAt} /></span>
                 <span>·</span>
                 <span>进入本列 <LocalDate value={card.columnEnteredAt} /></span>
+                {card.archivedAt ? (
+                  <>
+                    <span>·</span>
+                    <span>
+                      归档于 <LocalDate value={card.archivedAt} />
+                    </span>
+                  </>
+                ) : null}
                 {saving ? (
                   <span className="flex items-center gap-1 text-primary">
                     <Loader2 className="size-3 animate-spin" />
