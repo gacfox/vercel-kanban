@@ -28,14 +28,14 @@ export function ColumnDialog({ projectId }: { projectId: string }) {
   const [state, formAction] = useActionState<
     ActionResult<{ columnId: string }> | null,
     FormData
-  >(createColumnAction, null);
-
-  React.useEffect(() => {
-    if (state?.ok) {
-      setOpen(false);
+  >(async (prevState, formData) => {
+    const result = await createColumnAction(prevState, formData);
+    if (result.ok) {
+      React.startTransition(() => setOpen(false));
       router.refresh();
     }
-  }, [state, router]);
+    return result;
+  }, null);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

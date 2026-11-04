@@ -68,15 +68,15 @@ export function AdminUsers({
   const [createState, createAction] = useActionState<
     ActionResult<{ userId: string }> | null,
     FormData
-  >(createUserAction, null);
-
-  React.useEffect(() => {
-    if (createState?.ok) {
-      setCreateOpen(false);
+  >(async (prevState, formData) => {
+    const result = await createUserAction(prevState, formData);
+    if (result.ok) {
+      React.startTransition(() => setCreateOpen(false));
       toast.success("用户已创建");
       router.refresh();
     }
-  }, [createState, router]);
+    return result;
+  }, null);
 
   const filtered = users.filter((user) => {
     const term = search.trim().toLowerCase();

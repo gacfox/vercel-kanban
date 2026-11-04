@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { AlertCircle, Plus } from "lucide-react";
 import { useActionState } from "react";
 import { createProjectAction } from "@/lib/actions/projects";
@@ -25,22 +24,23 @@ import { SubmitButton } from "@/components/shared/submit-button";
 import type { ActionResult } from "@/lib/types";
 
 export function CreateProjectDialog() {
-  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [color, setColor] = React.useState("blue");
   const [template, setTemplate] = React.useState<"default" | "blank">("default");
-  const [state, formAction] = useActionState<
-    ActionResult<{ projectId: string }> | null,
-    FormData
-  >(createProjectAction, null);
+  const [state, formAction] = useActionState<ActionResult | null, FormData>(
+    createProjectAction,
+    null
+  );
 
-  React.useEffect(() => {
-    if (state?.ok) {
+  // 页面被 Activity 隐藏时，关闭一次性弹窗并清空临时选择。
+  // 成功创建后跳转由 createProjectAction 的 redirect 完成，客户端不再导航。
+  React.useLayoutEffect(() => {
+    return () => {
       setOpen(false);
-      router.push(`/projects/${state.data.projectId}`);
-      router.refresh();
-    }
-  }, [state, router]);
+      setColor("blue");
+      setTemplate("default");
+    };
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

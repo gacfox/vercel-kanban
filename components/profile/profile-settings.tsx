@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
@@ -21,17 +20,17 @@ import type { SessionUser } from "@/lib/types";
 
 export function ProfileSettings({ user }: { user: SessionUser }) {
   const router = useRouter();
-  const [state, formAction] = useActionState<AuthFormState, FormData>(
-    updateProfileAction,
+  const [, formAction] = useActionState<AuthFormState, FormData>(
+    async (prevState, formData) => {
+      const result = await updateProfileAction(prevState, formData);
+      if (result?.success) {
+        toast.success("资料已保存");
+        router.refresh();
+      }
+      return result;
+    },
     null
   );
-
-  React.useEffect(() => {
-    if (state?.success) {
-      toast.success("资料已保存");
-      router.refresh();
-    }
-  }, [state, router]);
 
   return (
     <div className="space-y-6">

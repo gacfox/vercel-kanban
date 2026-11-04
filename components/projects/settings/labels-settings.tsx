@@ -139,18 +139,18 @@ function LabelCreateDialog({
 }) {
   const [open, setOpen] = React.useState(false);
   const [color, setColor] = React.useState("slate");
-  const [state, formAction] = useActionState<
+  const [, formAction] = useActionState<
     ActionResult<{ labelId: string }> | null,
     FormData
-  >(createLabelAction, null);
-
-  React.useEffect(() => {
-    if (state?.ok) {
-      setOpen(false);
+  >(async (prevState, formData) => {
+    const result = await createLabelAction(prevState, formData);
+    if (result.ok) {
+      React.startTransition(() => setOpen(false));
       toast.success("标签已创建");
       onCreated();
     }
-  }, [state, onCreated]);
+    return result;
+  }, null);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -199,18 +199,18 @@ function LabelEditDialog({
 }) {
   const [open, setOpen] = React.useState(false);
   const [color, setColor] = React.useState(label.color);
-  const [state, formAction] = useActionState<ActionResult | null, FormData>(
-    updateLabelAction,
+  const [, formAction] = useActionState<ActionResult | null, FormData>(
+    async (prevState, formData) => {
+      const result = await updateLabelAction(prevState, formData);
+      if (result.ok) {
+        React.startTransition(() => setOpen(false));
+        toast.success("标签已更新");
+        onSaved();
+      }
+      return result;
+    },
     null
   );
-
-  React.useEffect(() => {
-    if (state?.ok) {
-      setOpen(false);
-      toast.success("标签已更新");
-      onSaved();
-    }
-  }, [state, onSaved]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

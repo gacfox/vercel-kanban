@@ -148,18 +148,18 @@ function FieldCreateDialog({
 }) {
   const [open, setOpen] = React.useState(false);
   const [type, setType] = React.useState("text");
-  const [state, formAction] = useActionState<
+  const [, formAction] = useActionState<
     ActionResult<{ fieldId: string }> | null,
     FormData
-  >(createFieldAction, null);
-
-  React.useEffect(() => {
-    if (state?.ok) {
-      setOpen(false);
+  >(async (prevState, formData) => {
+    const result = await createFieldAction(prevState, formData);
+    if (result.ok) {
+      React.startTransition(() => setOpen(false));
       toast.success("字段已创建");
       onCreated();
     }
-  }, [state, onCreated]);
+    return result;
+  }, null);
 
   const needsOptions = type === "select" || type === "multi_select";
 
@@ -237,18 +237,18 @@ function FieldEditDialog({
   onSaved: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [state, formAction] = useActionState<ActionResult | null, FormData>(
-    updateFieldAction,
+  const [, formAction] = useActionState<ActionResult | null, FormData>(
+    async (prevState, formData) => {
+      const result = await updateFieldAction(prevState, formData);
+      if (result.ok) {
+        React.startTransition(() => setOpen(false));
+        toast.success("字段已更新");
+        onSaved();
+      }
+      return result;
+    },
     null
   );
-
-  React.useEffect(() => {
-    if (state?.ok) {
-      setOpen(false);
-      toast.success("字段已更新");
-      onSaved();
-    }
-  }, [state, onSaved]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

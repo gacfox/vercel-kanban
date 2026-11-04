@@ -31,20 +31,20 @@ export function AdminSettings({
   const [registration, setRegistration] = React.useState(allowRegistration);
   const [health, setHealth] = React.useState<"loading" | "ok" | "error">("loading");
   const [state, formAction] = useActionState<ActionResult | null, FormData>(
-    updateSiteSettingsAction,
+    async (prevState, formData) => {
+      const result = await updateSiteSettingsAction(prevState, formData);
+      if (result.ok) {
+        toast.success("站点设置已保存");
+        router.refresh();
+      }
+      return result;
+    },
     null
   );
 
   React.useEffect(() => {
     setRegistration(allowRegistration);
   }, [allowRegistration]);
-
-  React.useEffect(() => {
-    if (state?.ok) {
-      toast.success("站点设置已保存");
-      router.refresh();
-    }
-  }, [state, router]);
 
   React.useEffect(() => {
     let cancelled = false;

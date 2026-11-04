@@ -176,18 +176,18 @@ function ColumnEditDialog({
   onSaved: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [state, formAction] = useActionState<ActionResult | null, FormData>(
-    updateColumnAction,
+  const [, formAction] = useActionState<ActionResult | null, FormData>(
+    async (prevState, formData) => {
+      const result = await updateColumnAction(prevState, formData);
+      if (result.ok) {
+        React.startTransition(() => setOpen(false));
+        toast.success("列已更新");
+        onSaved();
+      }
+      return result;
+    },
     null
   );
-
-  React.useEffect(() => {
-    if (state?.ok) {
-      setOpen(false);
-      toast.success("列已更新");
-      onSaved();
-    }
-  }, [state, onSaved]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

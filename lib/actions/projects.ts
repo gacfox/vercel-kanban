@@ -39,9 +39,9 @@ function revalidateProject(projectId: string) {
 }
 
 export async function createProjectAction(
-  _prevState: ActionResult<{ projectId: string }> | null,
+  _prevState: ActionResult | null,
   formData: FormData
-): Promise<ActionResult<{ projectId: string }>> {
+): Promise<ActionResult> {
   const user = await getSessionUser();
   if (!user) return fail("请先登录");
 
@@ -85,8 +85,8 @@ export async function createProjectAction(
 
   await sql.transaction(queries);
   revalidateProject(projectId);
-
-  return { ok: true, data: { projectId } };
+  revalidatePath("/", "layout");
+  redirect(`/projects/${projectId}`);
 }
 
 export async function updateProjectAction(
@@ -168,6 +168,7 @@ export async function deleteProjectAction(
   const sql = await getDb();
   await sql`DELETE FROM vk_projects WHERE id = ${projectId}`;
   revalidatePath("/projects");
+  revalidatePath("/", "layout");
   redirect("/projects");
 }
 
