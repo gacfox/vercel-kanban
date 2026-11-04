@@ -33,15 +33,12 @@ export function CreateProjectDialog() {
     async (prevState, formData) => {
       start();
       const result = await createProjectAction(prevState, formData);
-      // 创建成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
       if (result) finish();
       return result;
     },
     null
   );
 
-  // 页面被 Activity 隐藏时，关闭一次性弹窗并清空临时选择。
-  // 成功创建后跳转由 createProjectAction 的 redirect 完成，客户端不再导航。
   React.useLayoutEffect(() => {
     return () => {
       setOpen(false);

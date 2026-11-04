@@ -71,7 +71,6 @@ export function NavigationProgressProvider({
     stopTrickle();
     clearTimer(safetyTimerRef);
 
-    // 导航在延迟窗口内完成时，进度条从未显示，直接复位。
     if (!visibleRef.current) {
       setProgress(0);
       return;
@@ -100,7 +99,6 @@ export function NavigationProgressProvider({
     clearTimer(safetyTimerRef);
 
     if (visibleRef.current) {
-      // 连续导航时复用现有进度条，从低位重新开始。
       setProgress(0.08);
     } else {
       setProgress(0);

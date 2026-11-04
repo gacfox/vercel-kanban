@@ -27,7 +27,6 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
-  // 未挂载时统一按“跟随系统”渲染，避免 SSR 与客户端首帧不一致。
   const currentTheme: ThemeOption =
     mounted && isTheme(theme) ? theme : "system";
   const nextTheme =

@@ -15,7 +15,6 @@ export function SetupForm() {
     async (prevState, formData) => {
       start();
       const result = await setupAction(prevState, formData);
-      // 初始化成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
       if (result) finish();
       return result;
     },

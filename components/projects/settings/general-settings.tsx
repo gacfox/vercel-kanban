@@ -88,7 +88,6 @@ export function GeneralSettings({
   async function removeProject() {
     start();
     const result = await deleteProjectAction(project.id, confirmName);
-    // 删除成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
     finish();
     if (!result.ok) toast.error(result.error);
   }
