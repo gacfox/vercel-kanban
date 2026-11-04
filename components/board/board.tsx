@@ -53,6 +53,7 @@ function BoardView() {
   const {
     data,
     isRefreshing,
+    isSaving,
     lastRefreshedAt,
     refresh,
     setIsDragging,
@@ -198,18 +199,28 @@ function BoardView() {
                   {data.project.description}
                 </p>
               ) : null}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div
+                className="flex items-center gap-2 text-xs text-muted-foreground"
+                aria-live="polite"
+              >
                 <span className="flex items-center gap-1">
                   <Users className="size-3.5" />
                   {data.members.length} 位成员
                 </span>
                 <span>·</span>
-                <span>
-                  上次刷新{" "}
-                  {lastRefreshedAt
-                    ? lastRefreshedAt.toLocaleTimeString("zh-CN")
-                    : "刚刚"}
-                </span>
+                {isSaving ? (
+                  <span className="flex items-center gap-1 text-primary">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    保存中…
+                  </span>
+                ) : (
+                  <span>
+                    上次刷新{" "}
+                    {lastRefreshedAt
+                      ? lastRefreshedAt.toLocaleTimeString("zh-CN")
+                      : "刚刚"}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -237,7 +248,7 @@ function BoardView() {
                     variant="outline"
                     size="sm"
                     onClick={refresh}
-                    disabled={isRefreshing}
+                    disabled={isRefreshing || isSaving}
                   >
                     {isRefreshing ? (
                       <Loader2 className="size-4 animate-spin" />

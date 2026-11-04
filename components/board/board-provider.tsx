@@ -53,6 +53,7 @@ type BoardContextValue = {
   isDragging: boolean;
   setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
   isRefreshing: boolean;
+  isSaving: boolean;
   lastRefreshedAt: Date | null;
   refresh: () => void;
   createCard: (columnId: string, title: string) => Promise<boolean>;
@@ -206,6 +207,28 @@ export function BoardProvider({
   const [isDragging, setIsDragging] = React.useState(false);
   const [isRefreshing, startRefresh] = React.useTransition();
   const [lastRefreshedAt, setLastRefreshedAt] = React.useState<Date | null>(null);
+  const [pendingSaves, setPendingSaves] = React.useState(0);
+  const moveQueue = React.useRef<Promise<void>>(Promise.resolve());
+
+  const beginSave = React.useCallback(() => {
+    setPendingSaves((count) => count + 1);
+  }, []);
+
+  const endSave = React.useCallback(() => {
+    setPendingSaves((count) => Math.max(0, count - 1));
+  }, []);
+
+  React.useEffect(() => {
+    if (pendingSaves === 0) return;
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [pendingSaves]);
 
   const lastRevision = React.useRef(initialData.snapshotRevision);
   const pendingSnapshot = React.useRef<BoardData | null>(null);
@@ -257,19 +280,24 @@ export function BoardProvider({
 
   const createCard = React.useCallback(
     async (columnId: string, title: string) => {
-      const formData = new FormData();
-      formData.set("projectId", data.project.id);
-      formData.set("columnId", columnId);
-      formData.set("title", title);
-      const result = await createCardAction(null, formData);
-      if (!result.ok) {
-        toast.error(result.error);
-        return false;
+      beginSave();
+      try {
+        const formData = new FormData();
+        formData.set("projectId", data.project.id);
+        formData.set("columnId", columnId);
+        formData.set("title", title);
+        const result = await createCardAction(null, formData);
+        if (!result.ok) {
+          toast.error(result.error);
+          return false;
+        }
+        router.refresh();
+        return true;
+      } finally {
+        endSave();
       }
-      router.refresh();
-      return true;
     },
-    [data.project.id, router]
+    [beginSave, data.project.id, endSave, router]
   );
 
   const updateCard = React.useCallback(
@@ -277,58 +305,65 @@ export function BoardProvider({
       const snapshot = data;
       const existing = data.cards.find((card) => card.id === cardId);
 
-      if (existing) {
-        const nextLabels =
-          patch.labelIds !== undefined
-            ? data.labels.filter((label) => patch.labelIds?.includes(label.id))
-            : existing.labels;
-        const nextAssignees =
-          patch.assigneeIds !== undefined
-            ? data.members
-                .filter((member) => patch.assigneeIds?.includes(member.user.id))
-                .map((member) => member.user)
-            : existing.assignees;
-        const nextFieldValues = patch.fieldValues
-          ? { ...existing.fieldValues, ...patch.fieldValues }
-          : existing.fieldValues;
+      beginSave();
+      try {
+        if (existing) {
+          const nextLabels =
+            patch.labelIds !== undefined
+              ? data.labels.filter((label) => patch.labelIds?.includes(label.id))
+              : existing.labels;
+          const nextAssignees =
+            patch.assigneeIds !== undefined
+              ? data.members
+                  .filter((member) =>
+                    patch.assigneeIds?.includes(member.user.id)
+                  )
+                  .map((member) => member.user)
+              : existing.assignees;
+          const nextFieldValues = patch.fieldValues
+            ? { ...existing.fieldValues, ...patch.fieldValues }
+            : existing.fieldValues;
 
-        setData((prev) => ({
-          ...prev,
-          cards: prev.cards.map((card) =>
-            card.id === cardId
-              ? {
-                  ...card,
-                  title: patch.title ?? card.title,
-                  description: patch.description ?? card.description,
-                  priority: patch.priority ?? card.priority,
-                  dueAt:
-                    patch.dueAt !== undefined ? patch.dueAt : card.dueAt,
-                  labels: nextLabels,
-                  assignees: nextAssignees,
-                  fieldValues: nextFieldValues,
-                }
-              : card
-          ),
-        }));
-      }
+          setData((prev) => ({
+            ...prev,
+            cards: prev.cards.map((card) =>
+              card.id === cardId
+                ? {
+                    ...card,
+                    title: patch.title ?? card.title,
+                    description: patch.description ?? card.description,
+                    priority: patch.priority ?? card.priority,
+                    dueAt:
+                      patch.dueAt !== undefined ? patch.dueAt : card.dueAt,
+                    labels: nextLabels,
+                    assignees: nextAssignees,
+                    fieldValues: nextFieldValues,
+                  }
+                : card
+            ),
+          }));
+        }
 
-      const result = await updateCardAction({
-        projectId: data.project.id,
-        cardId,
-        ...patch,
-      });
+        const result = await updateCardAction({
+          projectId: data.project.id,
+          cardId,
+          ...patch,
+        });
 
-      if (!result.ok) {
-        setData(snapshot);
-        toast.error(result.error);
-        return false;
+        if (!result.ok) {
+          setData(snapshot);
+          toast.error(result.error);
+          return false;
+        }
+        if (result.data?.automationApplied) {
+          router.refresh();
+        }
+        return true;
+      } finally {
+        endSave();
       }
-      if (result.data?.automationApplied) {
-        router.refresh();
-      }
-      return true;
     },
-    [data, router]
+    [beginSave, data, endSave, router]
   );
 
   const moveCard = React.useCallback(
@@ -339,7 +374,6 @@ export function BoardProvider({
       afterCardId?: string | null,
       targetIndex?: number
     ) => {
-      const snapshot = data;
       setData((prev) => ({
         ...prev,
         cards: applyLocalMove(
@@ -352,26 +386,44 @@ export function BoardProvider({
         ),
       }));
 
-      const result = await moveCardAction({
-        projectId: data.project.id,
-        cardId,
-        targetColumnId,
-        beforeCardId: beforeCardId ?? null,
-        afterCardId: afterCardId ?? null,
-        targetIndex,
-      });
+      beginSave();
+      try {
+        const task = moveQueue.current.then(async () => {
+          const result = await moveCardAction({
+            projectId: data.project.id,
+            cardId,
+            targetColumnId,
+            beforeCardId: beforeCardId ?? null,
+            afterCardId: afterCardId ?? null,
+            targetIndex,
+          });
 
-      if (!result.ok) {
-        setData(snapshot);
-        toast.error(result.error);
-        return false;
-      }
-      if (result.data?.automationApplied) {
+          if (!result.ok) {
+            toast.error(result.error);
+            router.refresh();
+            return false;
+          }
+          if (result.data?.automationApplied) {
+            router.refresh();
+          }
+          return true;
+        });
+
+        moveQueue.current = task.then(
+          () => undefined,
+          () => undefined
+        );
+
+        return await task;
+      } catch {
+        toast.error("保存失败，请重试");
         router.refresh();
+        return false;
+      } finally {
+        endSave();
       }
-      return true;
     },
-    [data, router]
+    [beginSave, data.project.id, endSave, router]
   );
 
   const archiveCard = React.useCallback(
@@ -383,22 +435,27 @@ export function BoardProvider({
       }));
       setSelectedCardId(null);
 
-      const result = await archiveCardAction({
-        projectId: data.project.id,
-        cardId,
-        archived: true,
-      });
+      beginSave();
+      try {
+        const result = await archiveCardAction({
+          projectId: data.project.id,
+          cardId,
+          archived: true,
+        });
 
-      if (!result.ok) {
-        setData(snapshot);
-        toast.error(result.error);
-        return false;
+        if (!result.ok) {
+          setData(snapshot);
+          toast.error(result.error);
+          return false;
+        }
+        toast.success("卡片已归档");
+        router.refresh();
+        return true;
+      } finally {
+        endSave();
       }
-      toast.success("卡片已归档");
-      router.refresh();
-      return true;
     },
-    [data, router]
+    [beginSave, data, endSave, router]
   );
 
   const value: BoardContextValue = {
@@ -415,6 +472,7 @@ export function BoardProvider({
     isDragging,
     setIsDragging,
     isRefreshing,
+    isSaving: pendingSaves > 0,
     lastRefreshedAt,
     refresh,
     createCard,
