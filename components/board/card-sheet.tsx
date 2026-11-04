@@ -17,12 +17,12 @@ import {
   updateCommentAction,
 } from "@/lib/actions/board";
 import { PRIORITIES } from "@/lib/constants";
-import { fromDateTimeLocalValue, toDateTimeLocalValue } from "@/lib/date";
 import { useBoard } from "@/components/board/board-provider";
 import { AssigneePicker } from "@/components/board/assignee-picker";
 import { FieldInput } from "@/components/board/field-input";
 import { LabelsPicker } from "@/components/board/labels-picker";
 import { PriorityIcon } from "@/components/board/priority-icon";
+import { DateTimePicker } from "@/components/shared/date-time-picker";
 import { LocalDate } from "@/components/shared/local-date";
 import { Markdown } from "@/components/shared/markdown";
 import { UserAvatar } from "@/components/shared/user-avatar";
@@ -362,34 +362,16 @@ export function CardSheet() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label>截止时间</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="datetime-local"
-                    value={toDateTimeLocalValue(card.dueAt)}
-                    onChange={(event) =>
-                      void patchCard({
-                        dueAt: fromDateTimeLocalValue(event.target.value),
-                      })
-                    }
-                    disabled={!data.canEdit}
-                  />
-                  {card.dueAt ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={!data.canEdit}
-                      onClick={() => void patchCard({ dueAt: null })}
-                    >
-                      清除
-                    </Button>
-                  ) : null}
-                </div>
+                <DateTimePicker
+                  value={card.dueAt}
+                  onChange={(dueAt) => void patchCard({ dueAt })}
+                  disabled={!data.canEdit}
+                />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label>负责人</Label>
                 <AssigneePicker
                   members={data.members.map((member) => member.user)}

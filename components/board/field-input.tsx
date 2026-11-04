@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/shared/date-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -85,10 +86,9 @@ export function FieldInput({
 
   if (field.type === "date") {
     return (
-      <Input
-        type="date"
-        value={typeof value === "string" ? value : ""}
-        onChange={(event) => onChange(event.target.value || null)}
+      <DatePicker
+        value={typeof value === "string" ? value : null}
+        onChange={onChange}
         disabled={disabled}
       />
     );
