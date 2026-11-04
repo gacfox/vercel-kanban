@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useActionState } from "react";
 import { registerAction, type AuthFormState } from "@/lib/actions/auth";
+import { useNavigationProgress } from "@/components/layout/navigation-progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +13,15 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/shared/submit-button";
 
 export function RegisterForm() {
+  const { start, finish } = useNavigationProgress();
   const [state, formAction] = useActionState<AuthFormState, FormData>(
-    registerAction,
+    async (prevState, formData) => {
+      start();
+      const result = await registerAction(prevState, formData);
+      // 注册成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
+      if (result) finish();
+      return result;
+    },
     null
   );
   const [showPassword, setShowPassword] = React.useState(false);

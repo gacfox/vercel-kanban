@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import { createProjectAction } from "@/lib/actions/projects";
 import { PROJECT_COLORS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useNavigationProgress } from "@/components/layout/navigation-progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,8 +28,15 @@ export function CreateProjectDialog() {
   const [open, setOpen] = React.useState(false);
   const [color, setColor] = React.useState("blue");
   const [template, setTemplate] = React.useState<"default" | "blank">("default");
+  const { start, finish } = useNavigationProgress();
   const [state, formAction] = useActionState<ActionResult | null, FormData>(
-    createProjectAction,
+    async (prevState, formData) => {
+      start();
+      const result = await createProjectAction(prevState, formData);
+      // 创建成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
+      if (result) finish();
+      return result;
+    },
     null
   );
 

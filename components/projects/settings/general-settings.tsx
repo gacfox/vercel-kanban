@@ -10,6 +10,7 @@ import {
   updateProjectAction,
 } from "@/lib/actions/projects";
 import { PROJECT_COLORS } from "@/lib/constants";
+import { useNavigationProgress } from "@/components/layout/navigation-progress";
 import { ColorPicker } from "@/components/shared/color-picker";
 import {
   AlertDialog,
@@ -42,6 +43,7 @@ export function GeneralSettings({
   canManage: boolean;
 }) {
   const router = useRouter();
+  const { start, finish } = useNavigationProgress();
   const [name, setName] = React.useState(project.name);
   const [description, setDescription] = React.useState(project.description);
   const [color, setColor] = React.useState(project.color);
@@ -84,7 +86,10 @@ export function GeneralSettings({
   }
 
   async function removeProject() {
+    start();
     const result = await deleteProjectAction(project.id, confirmName);
+    // 删除成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
+    finish();
     if (!result.ok) toast.error(result.error);
   }
 

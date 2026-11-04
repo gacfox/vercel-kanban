@@ -1,7 +1,12 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import {
+  NavigationProgressCompletion,
+  NavigationProgressProvider,
+} from "@/components/layout/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -35,8 +40,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           disableTransitionOnChange
         >
           <TooltipProvider delayDuration={200}>
-            {children}
-            <Toaster richColors position="top-center" />
+            <NavigationProgressProvider>
+              {children}
+              <Suspense fallback={null}>
+                <NavigationProgressCompletion />
+              </Suspense>
+              <Toaster richColors position="top-center" />
+            </NavigationProgressProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>

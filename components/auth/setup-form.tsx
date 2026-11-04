@@ -3,14 +3,22 @@
 import { AlertCircle } from "lucide-react";
 import { useActionState } from "react";
 import { setupAction, type AuthFormState } from "@/lib/actions/auth";
+import { useNavigationProgress } from "@/components/layout/navigation-progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/shared/submit-button";
 
 export function SetupForm() {
+  const { start, finish } = useNavigationProgress();
   const [state, formAction] = useActionState<AuthFormState, FormData>(
-    setupAction,
+    async (prevState, formData) => {
+      start();
+      const result = await setupAction(prevState, formData);
+      // 初始化成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
+      if (result) finish();
+      return result;
+    },
     null
   );
 

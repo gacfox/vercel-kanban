@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useActionState } from "react";
 import { loginAction, type AuthFormState } from "@/lib/actions/auth";
+import { useNavigationProgress } from "@/components/layout/navigation-progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +19,15 @@ export function LoginForm({
   from?: string;
   allowRegistration: boolean;
 }) {
+  const { start, finish } = useNavigationProgress();
   const [state, formAction] = useActionState<AuthFormState, FormData>(
-    loginAction,
+    async (prevState, formData) => {
+      start();
+      const result = await loginAction(prevState, formData);
+      // 登录成功会 redirect，await 会抛出并由 Next 处理，不在这里结束进度条。
+      if (result) finish();
+      return result;
+    },
     null
   );
   const [showPassword, setShowPassword] = React.useState(false);
