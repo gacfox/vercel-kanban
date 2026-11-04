@@ -255,7 +255,7 @@ export function AdminUsers({
                         void changeRole(user.id, value as "admin" | "user")
                       }
                     >
-                      <SelectTrigger size="sm" className="w-28">
+                      <SelectTrigger size="sm" className="w-32">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
