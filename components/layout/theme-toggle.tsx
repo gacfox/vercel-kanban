@@ -4,12 +4,20 @@ import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
+const THEMES = ["system", "light", "dark"] as const;
+
+type ThemeOption = (typeof THEMES)[number];
+
+const THEME_LABELS: Record<ThemeOption, string> = {
+  system: "跟随系统",
+  light: "亮色",
+  dark: "暗色",
+};
+
+function isTheme(value: string | undefined): value is ThemeOption {
+  return value === "system" || value === "light" || value === "dark";
+}
 
 export function ThemeToggle() {
   const { setTheme, theme } = useTheme();
@@ -19,33 +27,24 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
+  // 未挂载时统一按“跟随系统”渲染，避免 SSR 与客户端首帧不一致。
+  const currentTheme: ThemeOption =
+    mounted && isTheme(theme) ? theme : "system";
+  const nextTheme =
+    THEMES[(THEMES.indexOf(currentTheme) + 1) % THEMES.length];
+
+  const CurrentIcon =
+    currentTheme === "dark" ? Moon : currentTheme === "light" ? Sun : Monitor;
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="切换主题">
-          {mounted && theme === "dark" ? (
-            <Moon className="size-4" />
-          ) : mounted && theme === "light" ? (
-            <Sun className="size-4" />
-          ) : (
-            <Monitor className="size-4" />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          <Sun className="size-4" />
-          亮色
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          <Moon className="size-4" />
-          暗色
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          <Monitor className="size-4" />
-          跟随系统
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(nextTheme)}
+      aria-label={`当前主题：${THEME_LABELS[currentTheme]}，点击切换到${THEME_LABELS[nextTheme]}`}
+      title={`当前主题：${THEME_LABELS[currentTheme]}`}
+    >
+      <CurrentIcon className="size-4" />
+    </Button>
   );
 }
