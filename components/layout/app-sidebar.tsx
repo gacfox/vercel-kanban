@@ -84,7 +84,9 @@ export function AppSidebar({
                     tooltip={project.name}
                   >
                     <Link href={`/projects/${project.id}`}>
-                      <ColorDot color={project.color} />
+                      <span className="flex size-4 shrink-0 items-center justify-center">
+                        <ColorDot color={project.color} />
+                      </span>
                       <span className="truncate">{project.name}</span>
                     </Link>
                   </SidebarMenuButton>
